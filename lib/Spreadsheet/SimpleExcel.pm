@@ -12,7 +12,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.1';
+our $VERSION     = '0.2';
 our $errstr      = '';
 
 sub new{
@@ -214,15 +214,16 @@ sub output_as_string{
 }# end output_as_string
 
 sub output_to_file{
-  my ($self,$filename) = @_;
+  my ($self,$filename,$lines) = @_;
   my ($package,$file,$line) = caller();
+  $lines =~ s/\D//g;
   unless($filename){
     $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_file() from
         $file line $line\n~;
     return undef;
   }
   $filename =~ s/[^A-Za-z0-9_\.\/]//g; #/
-  my $excel = $self->_make_excel();
+  my $excel = $self->_make_excel($lines);
   unless(defined $excel){
     $errstr = qq~Could not create $filename at Spreadsheet::SimpleExcel output_to_file() from
         $file line $line\n~;
@@ -235,8 +236,9 @@ sub output_to_file{
 }# end output_to_file
 
 sub _make_excel{
-  my ($self) = @_;
+  my ($self,$nr_of_lines) = @_;
   my ($package,$filename,$line) = caller();
+  my $c_lines = $nr_of_lines || 32000;
   unless(scalar(@{$self->{worksheets}}) >= 1){
     $errstr = qq~No worksheets in Spreadsheet~;
     return undef;
@@ -250,17 +252,30 @@ sub _make_excel{
     return undef;
   }
   else{
+    my @titles = map{$_->[0]}@{$self->{worksheets}};
     foreach my $worksheet(@{$self->{worksheets}}){
       my $sheet = $excel->addworksheet($worksheet->[0]);
-      my $col = 0;
-      my $row = 0;
-      foreach(@{$worksheet->[1]->{-headers}}){
-        $sheet->write($row,$col,$_);
-        $col++;
-      }
-      $row++ if(scalar(@{$worksheet->[1]->{'-headers'}}) > 0);
+      my $col  = 0;
+      my $row  = 0;
+      my $page = 2;
+      _header2sheet($sheet,$worksheet->[1]->{-headers});
+      $row++ if(exists $worksheet->[1]->{'-headers'} && scalar(@{$worksheet->[1]->{'-headers'}}) > 0);
       foreach my $data(@{$worksheet->[1]->{-data}}){
         $col = 0;
+        if($row >= $c_lines){
+          my $title = $worksheet->[0].'_p'.$page;
+          while(grep{$_ eq $title}@titles){
+            $page++;
+            $title = $worksheet->[0].'_p'.$page;
+          }
+          push(@titles,$title);
+          $sheet = $excel->addworksheet($title);
+          $row = 0;
+          if(scalar(@{$worksheet->[1]->{'-headers'}}) > 0){
+            $row = 1;
+            _header2sheet($sheet,$worksheet->[1]->{-headers});
+          }
+        }
         foreach my $value(@$data){
           $sheet->write($row,$col,$value);
           $col++;
@@ -272,6 +287,21 @@ sub _make_excel{
   }
   return $output;
 }# end _make_excel
+
+sub _header2sheet{
+  my ($sheet,$arref) = @_;
+  my $col = 0;
+  foreach(@$arref){
+    $sheet->write(0,$col,$_);
+    $col++;
+  }
+}# end _header2sheet
+
+sub sheets{
+  my ($self) = @_;
+  my @titles = map{$_->[0]}@{$self->{worksheets}};
+  return wantarray ? @titles : \@titles;
+}# end sheets
 
 1;
 __END__
@@ -313,11 +343,15 @@ Spreadsheet::SimpleExcel - Perl extension for creating excel-files quickly
   # create the spreadsheet
   $excel->output();
 
+  # print sheet-names
+  print join(", ",$excel->sheets()),"\n";
+
   # get the result as a string
   my $spreadsheet = $excel->output_as_string();
 
   # print result into a file and handle error
   $excel->output_to_file("my_excel.xls") or die $excel->errstr();
+  $excel->output_to_file("my_excel2.xls",45000) or die $excel->errstr();
 
   ## or
 
@@ -430,12 +464,22 @@ returns a string that contains the data in excel-format
 
 =head2 output_to_file
 
-  # print result into a file
+  # print result into a file [output_to_file(<filename>,<lines>)]
   $excel->output_to_file("my_excel.xls");
+  $excel->output_to_file("my_excel2.xls",45000) or die $excel->errstr();
 
 prints the data into a file. There is a limitation in allowed characters for the filename:
 A-Za-z0-9/._
 Other characters will be deleted.
+The data will be printed into more worksheets, if the number of rows is greater than <lines> (default 32000).
+
+=head2 sheets
+
+  $ref = $excel->sheets();
+  @names = $excel->sheets();
+
+In Listcontext this subroutines returns a list of the names of sheets that are in $excel, in
+scalar context it returns a reference on an Array.
 
 =head1 EXAMPLES
 
@@ -521,6 +565,30 @@ Other characters will be deleted.
   # print into file
   $excel2->output_to_file("my_excel.xls");
 
+=head2 PRINT INTO FILE (break worksheets)
+
+  #! /usr/bin/perl
+
+  use strict;
+  use warnings;
+  use Spreadsheet::SimpleExcel;
+
+  # create a new instance
+  my $excel    = Spreadsheet::SimpleExcel->new();
+
+  my @header = qw(Header1 Header2);
+  my @data   = (['Row1Col1', 'Row1Col2'],
+                ['Row2Col1', 'Row2Col2']);
+  for(0..70000){
+    push(@data,[qw/1 2 4 6 8/]);
+  }
+  # add worksheets
+  $excel->add_worksheet('Name of Worksheet',{-headers => \@header, -data => \@data});
+  $excel->add_row('Name of Worksheet',[qw/1 2 3 4 5/]);
+
+  # print into file
+  $excel->output_to_file("my_excel.xls",10000);
+
 =head1 DEPENDENCIES
 
 This module requires Spreadsheet::WriteExcel and IO::Scalar
@@ -532,6 +600,7 @@ Feel free to contact me and send me bugreports or comments on this module.
 =head1 SEE ALSO
 
 Spreadsheet::WriteExcel
+
 IO::Scalar
 
 =head1 AUTHOR

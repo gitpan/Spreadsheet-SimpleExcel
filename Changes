@@ -20,3 +20,9 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         - bug in output*-methods fixed
         - enhanced error handling
 
+0.2   Tue Jan 11 11:14:23 2005
+        - new method
+                * sheets             returns a list of all worksheets
+        - breaks sheets in several parts, if number of rows is greater than <lines> (32000)
+        - bug in _make_excel() fixed
+

@@ -20,6 +20,7 @@ This version provides 10 methods:
  * del_worksheet       deletes a worksheet of the spreadsheet
  * errstr              returns the error message of last occured error
  * sort_worksheets     sort worksheets in asc or desc order
+ * sheets              returns a list of all worksheets
 
 As a simple example:
 
