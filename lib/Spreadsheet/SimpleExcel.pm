@@ -12,7 +12,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.2';
+our $VERSION     = '0.3';
 our $errstr      = '';
 
 sub new{
@@ -189,9 +189,11 @@ sub _is_numeric{
 }# end _is_numeric
 
 sub output{
-  my ($self) = @_;
+  my ($self,$lines) = @_;
   my ($package,$filename,$line) = caller();
-  my $excel = $self->_make_excel();
+  $lines ||= 0
+  $lines =~ s/\D//g;
+  my $excel = $self->_make_excel($lines);
   unless(defined $excel){
     $errstr = qq~Could not create Spreadsheet at Spreadsheet::SimpleExcel output() from
          $filename line $line\n~;
@@ -202,9 +204,11 @@ sub output{
 }# end output
 
 sub output_as_string{
-  my ($self) = @_;
+  my ($self,$lines) = @_;
   my ($package,$filename,$line) = caller();
-  my $excel = $self->_make_excel();
+  $lines ||= 0
+  $lines =~ s/\D//g;
+  my $excel = $self->_make_excel($lines);
   unless(defined $excel){
     $errstr = qq~Could not create Spreadsheet at Spreadsheet::SimpleExcel output_to_file() from
         $filename line $line\n~;
@@ -216,6 +220,7 @@ sub output_as_string{
 sub output_to_file{
   my ($self,$filename,$lines) = @_;
   my ($package,$file,$line) = caller();
+  $lines ||= 0
   $lines =~ s/\D//g;
   unless($filename){
     $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_file() from
