@@ -8,8 +8,15 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
 	- bug in add_row() and set_headers() fixed.
 
 0.03  Wed Nov 03 09:20:35 2004
-	- new methods
+	- new methods:
         	* output_as_string   returns the excel-data as a string
                 * output_to_file     prints excel-data to a file
         - bug in set_headers() fixed
+
+0.1   Fri Jan 07 10:25:15 2005
+        - new methods:
+                * errstr             returns the error message of last occured error
+                * sort_worksheets    sort worksheets in asc or desc order
+        - bug in output*-methods fixed
+        - enhanced error handling
 
