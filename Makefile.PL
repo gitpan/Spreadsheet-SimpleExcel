@@ -5,7 +5,9 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'Spreadsheet::SimpleExcel',
     VERSION_FROM      => 'lib/Spreadsheet/SimpleExcel.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
+    PREREQ_PM         => {
+	'Spreadsheet::WriteExcel'	=> '0', # or a minimum workable version
+    },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Spreadsheet/SimpleExcel.pm', # retrieve abstract from module
        AUTHOR         => 'Renee Baecker <module@renee-baecker.de>') : ()),

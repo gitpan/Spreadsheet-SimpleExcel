@@ -4,3 +4,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
 	- original version; created by h2xs 1.23 with options
 		-XA -n Spreadsheet::SimpleExcel
 
+0.02  Tue Nov 02 08:08:11 2004
+	- bug in add_row() and set_headers() fixed.
+

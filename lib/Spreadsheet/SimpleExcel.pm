@@ -11,7 +11,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.01';
+our $VERSION     = '0.02';
 
 sub new{
   my ($class,%opts) = @_;
@@ -39,8 +39,10 @@ sub add_row{
   die "Aborted: Worksheet ".$title." doesn't exist at Spreadsheet::SimpleExcel add_row()\n" unless(grep{$_->[0] eq $title}@{$self->{worksheets}});
   die "Is not an arrayref at Spreadsheet::SimpleExcel add_row()\n" unless(ref($arref) eq 'ARRAY');
   foreach my $worksheet(@{$self->{worksheets}}){
-    push(@{$worksheet->[1]->{'-data'}},$arref) if($worksheet->[0] eq $title);
-    last;
+    if($worksheet->[0] eq $title){
+      push(@{$worksheet->[1]->{'-data'}},$arref);
+      last;
+    }
   }
 }# end add_data
 
@@ -49,8 +51,10 @@ sub set_headers{
   die "Aborted: Worksheet ".$title." doesn't exist at Spreadsheet::SimpleExcel set_headers()\n" unless(grep{$_->[0] eq $title}@{$self->{worksheets}});
   die "Is not an arrayref at Spreadsheet::SimpleExcel set_headers()\n" unless(ref($arref) eq 'ARRAY');
   foreach my $worksheet(@{$self->{worksheets}}){
-    $worksheet->[1]->{'-headers'} = $arref if($worksheet->[0] eq $title);
-    last;
+    if($worksheet->[0] eq $title)
+      $worksheet->[1]->{'-headers'} = $arref;
+      last;
+    }
   }
 }# end add_headers
 
