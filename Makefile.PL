@@ -7,6 +7,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Spreadsheet/SimpleExcel.pm', # finds $VERSION
     PREREQ_PM         => {
 	'Spreadsheet::WriteExcel'	=> '0', # or a minimum workable version
+        'IO::Scalar'			=> '0',
     },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Spreadsheet/SimpleExcel.pm', # retrieve abstract from module

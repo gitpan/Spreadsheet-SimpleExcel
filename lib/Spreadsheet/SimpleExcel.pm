@@ -4,6 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 use Spreadsheet::WriteExcel;
+use IO::Scalar;
 
 require Exporter;
 
@@ -11,7 +12,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.02';
+our $VERSION     = '0.03';
 
 sub new{
   my ($class,%opts) = @_;
@@ -51,7 +52,7 @@ sub set_headers{
   die "Aborted: Worksheet ".$title." doesn't exist at Spreadsheet::SimpleExcel set_headers()\n" unless(grep{$_->[0] eq $title}@{$self->{worksheets}});
   die "Is not an arrayref at Spreadsheet::SimpleExcel set_headers()\n" unless(ref($arref) eq 'ARRAY');
   foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title)
+    if($worksheet->[0] eq $title){
       $worksheet->[1]->{'-headers'} = $arref;
       last;
     }
@@ -103,12 +104,32 @@ sub _is_numeric{
 
 sub output{
   my ($self) = @_;
+  print "Content-type: ".$self->{type}."\n\n",
+        $self->_make_excel();
+}# end output
 
-  print "Content-type: ".$self->{type}."\n\n";
-  my $EXCEL = new Spreadsheet::WriteExcel(\*STDOUT);
+sub output_as_string{
+  my ($self) = @_;
+  return $self->_make_excel();
+}# end output_as_string
+
+sub output_to_file{
+  my ($self,$filename) = @_;
+  die "No filename specified!" unless($filename);
+  $filename =~ s/[^A-Za-z0-9_\.\/]//g; #/
+  open(EXCEL,">$filename") or die $!;
+  print EXCEL $self->_make_excel();
+  close EXCEL;
+}# end output_to_file
+
+sub _make_excel{
+  my ($self) = @_;
+  my $output;
+  tie(*XLS,'IO::Scalar',\$output);
+  my $excel = new Spreadsheet::WriteExcel(\*XLS) or die "Error creating spreadsheet object";
 
   foreach my $worksheet(@{$self->{worksheets}}){
-    my $sheet = $EXCEL->addworksheet($worksheet->[0]);
+    my $sheet = $excel->addworksheet($worksheet->[0]);
     my $col = 0;
     my $row = 0;
     foreach(@{$worksheet->[1]->{-headers}}){
@@ -125,15 +146,12 @@ sub output{
       $row++;
     }
   }
-  $EXCEL->close();
-}# end output
-
-
-# Preloaded methods go here.
+  $excel->close();
+  return $output;
+}# end _make_excel
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
@@ -168,6 +186,12 @@ Spreadsheet::SimpleExcel - Perl extension for creating excel-files quickly
 
   # create the spreadsheet
   $excel->output();
+
+  # get the result as a string
+  my $spreadsheet = $excel->output_as_string();
+
+  # print result into a file
+  $excel->output_to_file("my_excel.xls");
 
   ## or
 
@@ -257,11 +281,27 @@ set the headers for the worksheet named 'NAME'
 
   $excel2->output();
 
-prints the worksheet to the STDOUT.
+prints the worksheet to the STDOUT and prints the Mime-type 'application/vnd.ms-excel'.
+
+=head2 output_as_string
+
+  # get the result as a string
+  my $spreadsheet = $excel->output_as_string();
+
+returns a string that contains the data in excel-format
+
+=head2 output_to_file
+
+  # print result into a file
+  $excel->output_to_file("my_excel.xls");
+
+prints the data into a file. There is a limitation in allowed characters for the filename:
+A-Za-z0-9/._
+Other characters will be deleted.
 
 =head1 DEPENDENCIES
 
-This module requires Spreadsheet::WriteExcel
+This module requires Spreadsheet::WriteExcel and IO::Scalar
 
 =head1 BUGS
 
@@ -271,6 +311,7 @@ experienced any problem.
 =head1 SEE ALSO
 
 Spreadsheet::WriteExcel
+IO::Scalar
 
 =head1 AUTHOR
 
