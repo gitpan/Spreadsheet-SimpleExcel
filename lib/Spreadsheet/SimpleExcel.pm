@@ -12,7 +12,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.3';
+our $VERSION     = '0.4';
 our $errstr      = '';
 
 sub new{
@@ -191,7 +191,7 @@ sub _is_numeric{
 sub output{
   my ($self,$lines) = @_;
   my ($package,$filename,$line) = caller();
-  $lines ||= 0
+  $lines ||= 32000;
   $lines =~ s/\D//g;
   my $excel = $self->_make_excel($lines);
   unless(defined $excel){
@@ -206,7 +206,7 @@ sub output{
 sub output_as_string{
   my ($self,$lines) = @_;
   my ($package,$filename,$line) = caller();
-  $lines ||= 0
+  $lines ||= 32000;
   $lines =~ s/\D//g;
   my $excel = $self->_make_excel($lines);
   unless(defined $excel){
@@ -220,7 +220,7 @@ sub output_as_string{
 sub output_to_file{
   my ($self,$filename,$lines) = @_;
   my ($package,$file,$line) = caller();
-  $lines ||= 0
+  $lines ||= 32000;
   $lines =~ s/\D//g;
   unless($filename){
     $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_file() from

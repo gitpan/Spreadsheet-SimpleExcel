@@ -26,3 +26,9 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         - breaks sheets in several parts, if number of rows is greater than <lines> (32000)
         - bug in _make_excel() fixed
 
+0.3   Mon Jan 17 09:44:12 2005
+        - bug in output*-methods fixed
+
+0.4   Mon Jan 17 10:48:32 2005
+        - bug in output*-methods fixed
+
