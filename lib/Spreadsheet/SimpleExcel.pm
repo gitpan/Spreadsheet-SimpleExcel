@@ -12,7 +12,7 @@ our @ISA         = qw(Exporter);
 our %EXPORT_TAGS = ();
 our @EXPORT_OK   = ();
 our @EXPORT      = qw();
-our $VERSION     = '0.4';
+our $VERSION     = '0.5';
 our $errstr      = '';
 
 sub new{
@@ -87,13 +87,59 @@ sub set_headers{
     return undef;
   }
   unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel add_row() from
+    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers() from
          $filename line $line\n~;
     return undef;
   }
   foreach my $worksheet(@{$self->{worksheets}}){
     if($worksheet->[0] eq $title){
       $worksheet->[1]->{'-headers'} = $arref;
+      last;
+    }
+  }
+  return 1;
+}# end add_headers
+
+sub set_headers_format{
+  my ($self,$title,$arref) = @_;
+  $title ||= 'unknown';
+  my ($package,$filename,$line) = caller();
+  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers_format() from
+         $filename line $line\n~;
+    return undef;
+  }
+  unless(ref($arref) eq 'ARRAY'){
+    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers_format() from
+         $filename line $line\n~;
+    return undef;
+  }
+  foreach my $worksheet(@{$self->{worksheets}}){
+    if($worksheet->[0] eq $title){
+      $worksheet->[1]->{'-headers_format'} = $arref;
+      last;
+    }
+  }
+  return 1;
+}# end add_headers
+
+sub set_data_format{
+  my ($self,$title,$arref) = @_;
+  $title ||= 'unknown';
+  my ($package,$filename,$line) = caller();
+  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_data_format() from
+         $filename line $line\n~;
+    return undef;
+  }
+  unless(ref($arref) eq 'ARRAY'){
+    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_data_format() from
+         $filename line $line\n~;
+    return undef;
+  }
+  foreach my $worksheet(@{$self->{worksheets}}){
+    if($worksheet->[0] eq $title){
+      $worksheet->[1]->{'-data_format'} = $arref;
       last;
     }
   }
@@ -143,12 +189,18 @@ sub sort_data{
   foreach my $worksheet(@{$self->{worksheets}}){
     if($worksheet->[0] eq $title){
       my @array = @{$worksheet->[1]->{'-data'}};
-      if(not defined $index || $index =~ /[^\d]/ || $index > $#array){
+      last unless(scalar(@array) > 0);
+      if($index >= scalar(@{$array[0]})){
         $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
           $filename line $line\n~;
         return undef;
       }
-      if(_is_numeric(\@array)){
+      if(not defined $index || $index =~ /\D/){
+        $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
+          $filename line $line\n~;
+        return undef;
+      }
+      if(_is_numeric(\@array,$index)){
         @array = sort{$a->[$index] <=> $b->[$index]}@array;
       }
       else{
@@ -181,9 +233,9 @@ sub sort_worksheets{
 }# end sort_worksheets
 
 sub _is_numeric{
-  my ($arref) = @_;
+  my ($arref,$index) = @_;
   foreach(@$arref){
-    return 0 if($_ =~ /[^\d\.]/);
+    return 0 if($_->[$index] =~ /[^\d\.]/);
   }
   return 1;
 }# end _is_numeric
@@ -263,7 +315,7 @@ sub _make_excel{
       my $col  = 0;
       my $row  = 0;
       my $page = 2;
-      _header2sheet($sheet,$worksheet->[1]->{-headers});
+      _header2sheet($sheet,$worksheet->[1]->{-headers},$worksheet->[1]->{-headers_format});
       $row++ if(exists $worksheet->[1]->{'-headers'} && scalar(@{$worksheet->[1]->{'-headers'}}) > 0);
       foreach my $data(@{$worksheet->[1]->{-data}}){
         $col = 0;
@@ -278,11 +330,28 @@ sub _make_excel{
           $row = 0;
           if(scalar(@{$worksheet->[1]->{'-headers'}}) > 0){
             $row = 1;
-            _header2sheet($sheet,$worksheet->[1]->{-headers});
+            _header2sheet($sheet,$worksheet->[1]->{-headers},$worksheet->[1]->{-headers_format});
           }
         }
+        my $formatref = $worksheet->[1]->{-data_format};
         foreach my $value(@$data){
-          $sheet->write($row,$col,$value);
+          if(defined $formatref && defined $formatref->[$col]){
+            if($formatref->[$col] eq 's'){
+              $sheet->write_string($row,$col,$value);
+            }
+            elsif($formatref->[$col] eq 'n'){
+              $sheet->write_number($row,$col,$value);
+            }
+            else{
+              $sheet->write($row,$col,$value);
+            }
+          }
+          elsif($value =~ /^=/){
+            $sheet->write_string($row,$col,$value);
+          }
+          else{
+            $sheet->write($row,$col,$value);
+          }
           $col++;
         }
         $row++;
@@ -294,10 +363,23 @@ sub _make_excel{
 }# end _make_excel
 
 sub _header2sheet{
-  my ($sheet,$arref) = @_;
+  my ($sheet,$arref,$formatref) = @_;
   my $col = 0;
   foreach(@$arref){
-    $sheet->write(0,$col,$_);
+    unless(defined $formatref && defined $formatref->[$col]){
+      $sheet->write(0,$col,$_);
+    }
+    else{
+      if($formatref->[$col] eq 's'){
+        $sheet->write_string(0,$col,$_);
+      }
+      elsif($formatref->[$col] eq 'n'){
+        $sheet->write_number(0,$col,$_);
+      }
+      else{
+        $sheet->write(0,$col,$_);
+      }
+    }
     $col++;
   }
 }# end _header2sheet
@@ -377,9 +459,8 @@ Spreadsheet::SimpleExcel - Perl extension for creating excel-files quickly
 
 =head1 DESCRIPTION
 
-Spreadsheet::SimpleExcel simplifies the creation of excel-files in the web. It does not
-provide any access to cell-formats yet. This is just a raw version that will be
-extended within the next few weeks.
+Spreadsheet::SimpleExcel simplifies the creation of excel-files in the web. It does
+provide simple cell-formats, but only three types of formats (to keep the module simple).
 
 =head1 METHODS
 
@@ -483,8 +564,26 @@ The data will be printed into more worksheets, if the number of rows is greater 
   $ref = $excel->sheets();
   @names = $excel->sheets();
 
-In Listcontext this subroutines returns a list of the names of sheets that are in $excel, in
+In listcontext this subroutines returns a list of the names of sheets that are in $excel, in
 scalar context it returns a reference on an Array.
+
+=head2 set_headers_format
+
+  # set formats for headers of 'NAME'
+  # first col 'string', second col 'number', third col default format, fourth col 'number'
+  $excel2->set_headers_format('NAME',['s','n',undef,'n']);
+
+sets the headers formats for a specified worksheet. If formats are commited, the default
+format is set. Default format is set by Spreadsheet::WriteExcel
+
+=head2 set_data_format
+
+  # set formats for headers of 'NAME'
+  # first col 'string', second col 'number', third col default format, fourth col 'number'
+  $excel2->set_data_format('NAME',['s','n',undef,'n']);
+
+sets the data formats for a specified worksheet. If formats are commited, the default
+format is set. Default format is set by Spreadsheet::WriteExcel
 
 =head1 EXAMPLES
 
@@ -601,6 +700,7 @@ This module requires Spreadsheet::WriteExcel and IO::Scalar
 =head1 BUGS and COMMENTS
 
 Feel free to contact me and send me bugreports or comments on this module.
+Feature Requests or discussions are welcome at http://groups-beta.google.com/group/SpreadsheetSimpleExcel
 
 =head1 SEE ALSO
 

@@ -1,4 +1,4 @@
-Spreadsheet-SimpleExcel version 0.1
+Spreadsheet-SimpleExcel version 0.5
 ====================================
 
 This module is used to show data in excel-files in the web. It can be used
@@ -21,6 +21,8 @@ This version provides 10 methods:
  * errstr              returns the error message of last occured error
  * sort_worksheets     sort worksheets in asc or desc order
  * sheets              returns a list of all worksheets
+ * set_headers_format  set formats for header-row
+ * set_data_format     set formats for data
 
 As a simple example:
 
