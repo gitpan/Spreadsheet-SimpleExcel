@@ -5,7 +5,9 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 1;
+use Test::More tests => 4;
+use FindBin qw();
+
 BEGIN { use_ok('Spreadsheet::SimpleExcel') };
 
 #########################
@@ -13,3 +15,32 @@ BEGIN { use_ok('Spreadsheet::SimpleExcel') };
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
+use Spreadsheet::SimpleExcel;
+
+
+my @header = qw(Header1 Header2);
+my @data;
+  
+for my $i(0..5){
+  for(reverse(3..9)){
+    push(@data,[$i,$_]);
+  }
+}
+
+# create a new instance
+my $excel = Spreadsheet::SimpleExcel->new();
+ok($excel && ref($excel) eq 'Spreadsheet::SimpleExcel');
+
+# add worksheets
+$excel->add_worksheet('Name of Worksheet',{-headers => \@header, -data => \@data});
+my @sheets = $excel->sheets();
+ok($sheets[0] eq 'Name of Worksheet');
+
+my $err;
+$excel->sort_data('Name of Worksheet',3,'DESC') or $err = $excel->errstr();
+ok(index($err,'Index not in Array') != -1);
+
+#my $file = $FindBin::Bin.'/excel2.xls';
+#$excel->output_to_file($file);
+#ok(-e $file);
+#unlink $file if -e $file;

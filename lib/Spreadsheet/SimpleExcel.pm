@@ -6,13 +6,7 @@ use warnings;
 use Spreadsheet::WriteExcel;
 use IO::Scalar;
 
-require Exporter;
-
-our @ISA         = qw(Exporter);
-our %EXPORT_TAGS = ();
-our @EXPORT_OK   = ();
-our @EXPORT      = qw();
-our $VERSION     = '0.5';
+our $VERSION     = '0.6';
 our $errstr      = '';
 
 sub new{
@@ -188,6 +182,8 @@ sub sort_data{
   }
   foreach my $worksheet(@{$self->{worksheets}}){
     if($worksheet->[0] eq $title){
+      $worksheet->[1]->{sortstring} = '' unless(exists $worksheet->[1]->{sortstring});
+      my $join = $worksheet->[1]->{sortstring} =~ /\w/ ? ' || ' : '';
       my @array = @{$worksheet->[1]->{'-data'}};
       last unless(scalar(@array) > 0);
       if($index >= scalar(@{$array[0]})){
@@ -201,18 +197,41 @@ sub sort_data{
         return undef;
       }
       if(_is_numeric(\@array,$index)){
-        @array = sort{$a->[$index] <=> $b->[$index]}@array;
+        if($type && $type eq 'DESC'){
+          $worksheet->[1]->{sortstring} .= "$join \$b->[$index] <=> \$a->[$index]";
+        }
+        else{
+          $worksheet->[1]->{sortstring} .= "$join \$a->[$index] <=> \$b->[$index]";
+        }
       }
       else{
-        @array = sort{$a->[$index] cmp $b->[$index]}@array;
+        if($type && $type eq 'DESC'){
+          $worksheet->[1]->{sortstring} .= "$join \$b->[$index] cmp \$a->[$index]";
+        }
+        else{
+          $worksheet->[1]->{sortstring} .= "$join \$a->[$index] cmp \$b->[$index]";
+        }
       }
-      @array = reverse(@array) if($type && $type eq 'DESC');
-      $worksheet->[1]->{'-data'} = \@array;
       last;
     }
   }
   return 1;
 }# end sort_data
+
+sub reset_sort{
+  my ($self,$title) = @_;
+  my ($package,$filename,$line) = caller();
+  $title ||= 'unknown';
+  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
+         $filename line $line\n~;
+    return undef;
+  }
+  my (@worksheets) = grep{$_->[0] eq $title}@{$self->{worksheets}};
+  for my $sheet(@worksheets){
+    $sheet->[1]->{sortstring} = '';
+  }
+}# reset_sort
 
 sub errstr{
   return $errstr;
@@ -239,6 +258,14 @@ sub _is_numeric{
   }
   return 1;
 }# end _is_numeric
+
+sub _do_sort{
+  my ($worksheet) = @_;
+  my @array = @{$worksheet->[1]->{'-data'}};
+  if($worksheet->[1]->{sortstring} =~ /\w/){
+    $worksheet->[1]->{-data} = [sort{eval($worksheet->[1]->{sortstring})}@array];
+  }
+}# _do_sort
 
 sub output{
   my ($self,$lines) = @_;
@@ -287,6 +314,7 @@ sub output_to_file{
     return undef;
   }
   open(EXCEL,">$filename") or die $!;
+  binmode EXCEL;
   print EXCEL $excel;
   close EXCEL;
   return 1;
@@ -312,6 +340,7 @@ sub _make_excel{
     my @titles = map{$_->[0]}@{$self->{worksheets}};
     foreach my $worksheet(@{$self->{worksheets}}){
       my $sheet = $excel->addworksheet($worksheet->[0]);
+      _do_sort($worksheet);
       my $col  = 0;
       my $row  = 0;
       my $page = 2;
@@ -515,7 +544,19 @@ This method inserts a row into the existing data
   # sort data of worksheet - ASC or DESC
   $excel->sort_data('Name of Worksheet',0,'DESC');
 
-sort_data sorts the rows
+sort_data sorts the rows. All sorts for one worksheet are combined, so 
+
+  $excel->sort_data('Name of Worksheet',0,'DESC');
+  $excel->sort_data('Name of Worksheet',1,'ASC');
+  
+will sort the column 0 first and then (within this sorted data) the
+column 1.
+
+=head2 reset_sort
+
+  $excel->reset_sort('Name of Worksheet');
+  
+The data won't be sorted, the data are in original order instead.
 
 =head2 set_headers
 
