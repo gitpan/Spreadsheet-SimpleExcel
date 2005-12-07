@@ -6,7 +6,7 @@ use warnings;
 use Spreadsheet::WriteExcel;
 use IO::Scalar;
 
-our $VERSION     = '0.6';
+our $VERSION     = '0.7';
 our $errstr      = '';
 
 sub new{
@@ -306,7 +306,7 @@ sub output_to_file{
         $file line $line\n~;
     return undef;
   }
-  $filename =~ s/[^A-Za-z0-9_\.\/]//g; #/
+  #$filename =~ s/[^A-Za-z0-9_\.\/]//g; #/
   my $excel = $self->_make_excel($lines);
   unless(defined $excel){
     $errstr = qq~Could not create $filename at Spreadsheet::SimpleExcel output_to_file() from
@@ -595,9 +595,7 @@ returns a string that contains the data in excel-format
   $excel->output_to_file("my_excel.xls");
   $excel->output_to_file("my_excel2.xls",45000) or die $excel->errstr();
 
-prints the data into a file. There is a limitation in allowed characters for the filename:
-A-Za-z0-9/._
-Other characters will be deleted.
+prints the data into a file.
 The data will be printed into more worksheets, if the number of rows is greater than <lines> (default 32000).
 
 =head2 sheets

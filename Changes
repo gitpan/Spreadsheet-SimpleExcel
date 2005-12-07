@@ -48,3 +48,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         - bug in output_to_file fixed
         - joined sorts
         - reset_sort added
+        
+0.7   Sat Dec 03 07:00:29 2005
+        - filter in output_to_file deleted
