@@ -51,3 +51,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         
 0.7   Sat Dec 03 07:00:29 2005
         - filter in output_to_file deleted
+        
+0.8   Wed Dec 07 14:19:41 2005
+        - support for "big" files implemented

@@ -14,6 +14,7 @@ sub new{
   my $self = {};
   $self->{worksheets} = $opts{-worksheets} || [];
   $self->{type}       = 'application/vnd.ms-excel';
+  $self->{BIG}        = $opts{-big} || 0;
   bless($self,$class);
   return $self;
 }# end new
@@ -336,7 +337,19 @@ sub _make_excel{
         $filename line $line~;
     return undef;
   }
-  else{
+  if($self->{BIG}){
+    eval{require Spreadsheet::WriteExcel::Big};
+    if($@){
+      $errstr = $@;
+      return undef;
+    }
+    unless($excel = new Spreadsheet::WriteExcel::Big(\*XLS)){#$fname)){
+      $errstr = qq~Could not create spreadsheet object ($!) from
+          $filename line $line~;
+      return undef;
+    }
+  }
+  #else{
     my @titles = map{$_->[0]}@{$self->{worksheets}};
     foreach my $worksheet(@{$self->{worksheets}}){
       my $sheet = $excel->addworksheet($worksheet->[0]);
@@ -387,7 +400,7 @@ sub _make_excel{
       }
     }
     $excel->close();
-  }
+  #}
   return $output;
 }# end _make_excel
 
@@ -506,6 +519,11 @@ provide simple cell-formats, but only three types of formats (to keep the module
   # to create a file
   my $filename = 'test.xls';
   my $excel = Spreadsheet::SimpleExcel->new(-filename => $filename);
+  
+  #if a file > 7 MB should be created
+  $excel = Spreadsheet::SimpleExcel->new(-big => 1);
+  
+If -big is set to true, Spreadsheet::WriteExcel::Big is required!
 
 =head2 add_worksheet
 
