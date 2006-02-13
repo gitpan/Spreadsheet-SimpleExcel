@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 use FindBin qw();
 
 BEGIN { use_ok('Spreadsheet::SimpleExcel') };
@@ -18,7 +18,7 @@ BEGIN { use_ok('Spreadsheet::SimpleExcel') };
 use Spreadsheet::SimpleExcel;
 
 
-my @header = qw(Header1 Header2);
+my @header = qw(Header!1 Header2);
 my @data;
   
 for my $i(0..5){
@@ -40,7 +40,14 @@ my $err;
 $excel->sort_data('Name of Worksheet',3,'DESC') or $err = $excel->errstr();
 ok(index($err,'Index not in Array') != -1);
 
-#my $file = $FindBin::Bin.'/excel2.xls';
-#$excel->output_to_file($file);
-#ok(-e $file);
-#unlink $file if -e $file;
+my $file = $FindBin::Bin.'/excel2.xls';
+unlink $file if -e $file;
+$excel->output_to_file($file);
+ok(-e $file);
+unlink $file if -e $file;
+
+my $xml = $FindBin::Bin.'/test.xml';
+unlink $xml if -e $xml;
+$excel->output_to_XML($xml);
+ok(-e $xml);
+unlink $xml if -e $xml;

@@ -1,4 +1,4 @@
-Spreadsheet-SimpleExcel version 0.5
+Spreadsheet-SimpleExcel version 0.9
 ====================================
 
 This module is used to show data in excel-files in the web. It can be used
@@ -7,7 +7,7 @@ cell-formats yet, but the module will be extended within the next weeks.
 
 Spreadsheet::SimpleExcel was created under working title "WWW::WebExcel"
 
-This version provides 10 methods:
+This version provides these methods:
  * new                 creates a new instance of SimpleExcel
  * add_row             appends new rows to the existing ones
  * set_headers         replaces the existing list of headers
@@ -23,6 +23,7 @@ This version provides 10 methods:
  * sheets              returns a list of all worksheets
  * set_headers_format  set formats for header-row
  * set_data_format     set formats for data
+ * output_to_XML       prints the data as XML file
 
 As a simple example:
 

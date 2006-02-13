@@ -54,3 +54,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         
 0.8   Wed Dec 07 14:19:41 2005
         - support for "big" files implemented
+        
+0.9   Fri Jan 10 06:27:30 2006
+        - output_to_XML added

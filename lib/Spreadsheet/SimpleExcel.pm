@@ -5,8 +5,10 @@ use strict;
 use warnings;
 use Spreadsheet::WriteExcel;
 use IO::Scalar;
+use IO::File;
+use XML::Writer;
 
-our $VERSION     = '0.7';
+our $VERSION     = '0.9';
 our $errstr      = '';
 
 sub new{
@@ -321,6 +323,61 @@ sub output_to_file{
   return 1;
 }# end output_to_file
 
+sub output_to_XML{
+  my ($self,$filename) = @_;
+  my ($package,$file,$line) = caller();
+  unless($filename){
+    $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_XML() from
+        $file line $line\n~;
+    return undef;
+  }
+  unless(scalar(@{$self->{worksheets}}) >= 1){
+    $errstr = qq~No worksheets in Spreadsheet~;
+    return undef;
+  }
+  
+  my $fh = IO::File->new(">$filename");
+  my $xml = XML::Writer->new(OUTPUT => $fh, DATA_MODE => 1, DATA_INDENT => 2);
+  $xml->xmlDecl('UTF-8','yes');
+  $xml->startTag('workbook');
+  for my $worksheet(@{$self->{worksheets}}){
+    my $name = $worksheet->[0];
+    $name =~ s~[^\w]~_~g;
+    $xml->startTag($name);
+    
+    my @headers;
+    my @datasets = @{$worksheet->[1]->{-data}};
+    if(exists $worksheet->[1]->{-headers}){
+      @headers = (@{$worksheet->[1]->{-headers}});
+      for(@headers){
+        s~[^\w]~_~g; 
+      }
+    }
+    else{
+      my $var = 'A';
+      for(0..scalar(@{$datasets[0]})-1){
+        ++$var;
+        push(@headers,$var);
+      }
+    }
+    my $row = 0;
+    for my $data(@datasets){
+      $xml->startTag('Row'.(++$row));
+      for my $i(0..scalar(@$data)-1){
+        $xml->startTag($headers[$i]);
+        $xml->characters($data->[$i]);
+        $xml->endTag($headers[$i]);
+      }
+      $xml->endTag('Row'.$row);
+    }
+    
+    $xml->endTag($name);
+  }
+  $xml->endTag('workbook');
+  $xml->end();
+  $fh->close();
+}# output_to_XML
+
 sub _make_excel{
   my ($self,$nr_of_lines) = @_;
   my ($package,$filename,$line) = caller();
@@ -437,7 +494,7 @@ __END__
 
 =head1 NAME
 
-Spreadsheet::SimpleExcel - Perl extension for creating excel-files quickly
+Spreadsheet::SimpleExcel - Create Excel files with Perl
 
 =head1 SYNOPSIS
 
