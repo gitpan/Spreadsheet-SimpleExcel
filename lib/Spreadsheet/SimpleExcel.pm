@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '0.9';
+our $VERSION     = '1.0';
 our $errstr      = '';
 
 sub new{
@@ -555,6 +555,8 @@ Spreadsheet::SimpleExcel - Create Excel files with Perl
   $excel2->add_row('NAME',[qw/new row/]);
 
   $excel2->output();
+  
+  $excel2->output_to_XML('test.xml');
 
 =head1 DESCRIPTION
 
@@ -672,6 +674,13 @@ returns a string that contains the data in excel-format
 
 prints the data into a file.
 The data will be printed into more worksheets, if the number of rows is greater than <lines> (default 32000).
+
+=head2 output_to_XML
+
+  
+  $excel2->output_to_XML('test.xml');
+  
+prints the data into a XML file.
 
 =head2 sheets
 
@@ -821,6 +830,10 @@ Feature Requests or discussions are welcome at http://groups-beta.google.com/gro
 Spreadsheet::WriteExcel
 
 IO::Scalar
+
+IO::File
+
+XML::Writer
 
 =head1 AUTHOR
 
