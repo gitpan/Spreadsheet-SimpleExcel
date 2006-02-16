@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.0';
+our $VERSION     = '1.1';
 our $errstr      = '';
 
 sub new{
@@ -265,7 +265,9 @@ sub _is_numeric{
 sub _do_sort{
   my ($worksheet) = @_;
   my @array = @{$worksheet->[1]->{'-data'}};
-  if($worksheet->[1]->{sortstring} =~ /\w/){
+  if(exists  $worksheet->[1]->{sortstring} && 
+     defined $worksheet->[1]->{sortstring} && 
+             $worksheet->[1]->{sortstring} =~ /\w/){
     $worksheet->[1]->{-data} = [sort{eval($worksheet->[1]->{sortstring})}@array];
   }
 }# _do_sort

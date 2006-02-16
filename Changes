@@ -60,3 +60,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         
 1.0   Mon Jan 13 03:54:23 2006
         - changes in documentation
+        
+1.1   Thu Feb 15 22:59:44 2006
+        - one minor bug in _do_sort fixed
