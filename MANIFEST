@@ -3,5 +3,8 @@ Makefile.PL
 MANIFEST
 README
 t/Spreadsheet-SimpleExcel.t
+t/SimpleExcel_Manifest.t
+t/SimpleExcel_POD.t
+t/SimpleExcel_Pod_Coverage.t
 lib/Spreadsheet/SimpleExcel.pm
 META.yml                                 Module meta-data (added by MakeMaker)

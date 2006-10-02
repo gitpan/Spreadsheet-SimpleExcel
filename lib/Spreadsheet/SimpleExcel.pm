@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.1';
+our $VERSION     = '1.2';
 our $errstr      = '';
 
 sub new{
@@ -447,9 +447,9 @@ sub _make_excel{
               $sheet->write($row,$col,$value);
             }
           }
-          elsif($value =~ /^=/){
-            $sheet->write_string($row,$col,$value);
-          }
+          #elsif($value =~ /^=/){
+          #  $sheet->write_string($row,$col,$value);
+          #}
           else{
             $sheet->write($row,$col,$value);
           }
