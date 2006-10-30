@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.2';
+our $VERSION     = '1.3';
 our $errstr      = '';
 
 sub new{
@@ -16,7 +16,8 @@ sub new{
   my $self = {};
   $self->{worksheets} = $opts{-worksheets} || [];
   $self->{type}       = 'application/vnd.ms-excel';
-  $self->{BIG}        = $opts{-big} || 0;
+  $self->{BIG}        = $opts{-big}        || 0;
+  $self->{FILE}       = $opts{-filename}   || '';
   bless($self,$class);
   return $self;
 }# end new
@@ -307,9 +308,14 @@ sub output_to_file{
   $lines ||= 32000;
   $lines =~ s/\D//g;
   unless($filename){
-    $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_file() from
-        $file line $line\n~;
-    return undef;
+    if($self->{FILE}){
+        $filename = $self->{FILE};
+    }
+    else{
+        $errstr = qq~No filename specified at Spreadsheet::SimpleExcel output_to_file() from
+            $file line $line\n~;
+        return undef;
+    }
   }
   #$filename =~ s/[^A-Za-z0-9_\.\/]//g; #/
   my $excel = $self->_make_excel($lines);

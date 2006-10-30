@@ -69,4 +69,8 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
           the default format of Spreadsheet::WriteExcel is used
         + Test::Pod test added
         + Test::Pod::Coverage test added
-        + Test::MatchDist test added
+        + Test::CheckManifest test added
+
+1.3   Mon Oct 30 17:33:12 2006
+        * output_to_test bug fixed: if filename is omitted and it was defined
+          for the constructor, the filename of constructor is taken.
