@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.3';
+our $VERSION     = '1.4';
 our $errstr      = '';
 
 sub new{
@@ -19,8 +19,16 @@ sub new{
   $self->{BIG}        = $opts{-big}        || 0;
   $self->{FILE}       = $opts{-filename}   || '';
   bless($self,$class);
+  
+  $self->_last_sheet('');
+  
   return $self;
 }# end new
+
+sub current_sheet{
+    my ($self) = @_;
+    return $self->_last_sheet;
+}
 
 sub add_worksheet{
   my ($self,@array) = @_;
@@ -28,9 +36,12 @@ sub add_worksheet{
   unless(defined $array[0]){
     $errstr = qq~No worksheet defined at Spreadsheet::SimpleExcel add_worksheet() from
        $filename line $line\n~;
-    $array[0] ||= 'unknown';
+    $array[0] = 'unknown' unless defined $array[0];
     return undef;
   }
+  
+  $self->_last_sheet($array[0]);
+  
   if(grep{$_->[0] eq $array[0]}@{$self->{worksheets}}){
     $errstr = qq~Duplicate worksheet-title at Spreadsheet::SimpleExcel add_worksheet() from
        $filename line $line\n~;
@@ -40,9 +51,20 @@ sub add_worksheet{
   return 1;
 }# end add_worksheet
 
+sub _last_sheet{
+    my ($self,$title) = @_;
+    
+    $self->{last_sheet} = $title if defined $title;
+    
+    return $self->{last_sheet};
+}
+
 sub del_worksheet{
   my ($self,$title) = @_;
   my ($package,$filename,$line) = caller();
+  
+  $title = $self->_last_sheet unless defined $title;
+  
   unless(defined $title){
     $errstr = qq~No worksheet-title defined at Spreadsheet::SimpleExcel del_worksheet() from
         $filename line $line\n~;
@@ -55,7 +77,13 @@ sub del_worksheet{
 sub add_row{
   my ($self,$title,$arref) = @_;
   my ($package,$filename,$line) = caller();
-  $title ||= 'unknown';
+  
+  if(ref $title eq 'ARRAY'){
+      $arref = $title;
+      $title = $self->_last_sheet;
+  }
+  
+  $title = $self->_last_sheet unless $title;
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row() from
          $filename line $line\n~;
@@ -77,8 +105,14 @@ sub add_row{
 
 sub set_headers{
   my ($self,$title,$arref) = @_;
-  $title ||= 'unknown';
   my ($package,$filename,$line) = caller();
+  
+  if(ref $title eq 'ARRAY'){
+      $arref = $title;
+      $title = $self->_last_sheet;
+  }
+  
+  $title ||= 'unknown';
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers() from
          $filename line $line\n~;
@@ -100,8 +134,15 @@ sub set_headers{
 
 sub set_headers_format{
   my ($self,$title,$arref) = @_;
-  $title ||= 'unknown';
   my ($package,$filename,$line) = caller();
+  
+  if(ref $title eq 'ARRAY'){
+      $arref = $title;
+      $title = $self->_last_sheet;
+  }
+  
+  $title = $self->_last_sheet unless defined $title;
+  
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers_format() from
          $filename line $line\n~;
@@ -123,8 +164,14 @@ sub set_headers_format{
 
 sub set_data_format{
   my ($self,$title,$arref) = @_;
-  $title ||= 'unknown';
   my ($package,$filename,$line) = caller();
+  
+  if(ref $title eq 'ARRAY'){
+      $arref = $title;
+      $title = $self->_last_sheet;
+  }
+  
+  $title = $self->_last_sheet unless defined $title;
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_data_format() from
          $filename line $line\n~;
@@ -147,7 +194,15 @@ sub set_data_format{
 sub add_row_at{
   my ($self,$title,$index,$arref) = @_;
   my ($package,$filename,$line) = caller();
-  $title ||= 'unknown';
+  
+  if(ref $index eq 'ARRAY'){
+      $arref = $index;
+      $index = $title;
+      $title = $self->_last_sheet;
+  }
+  
+  $title = $self->_last_sheet unless defined $title;
+  
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
          $filename line $line\n~;
@@ -177,13 +232,40 @@ sub add_row_at{
 sub sort_data{
   my ($self,$title,$index,$type) = @_;
   my ($package,$filename,$line) = caller();
-  $title ||= 'unknown';
+  
+  if(scalar @_ == 1){
+      $errstr = qq~at least column index is missing ($filename line $line)~;
+      return undef;
+  }
+  elsif(scalar @_ == 2){
+      if($title =~ /\D/){
+          $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
+            $filename line $line\n~;
+          return undef;
+          
+      }
+      else{
+          $index = $title;
+          $title = $self->_last_sheet;
+      }
+  }
+  elsif(scalar @_ == 3){
+      if($title =~ /^\d+$/ and $index =~ /^ASC|DESC$/){
+          $type  = $index;
+          $index = $title;
+          $title = $self->_last_sheet;
+      }
+  }
+  
+  $title = $self->_last_sheet unless defined $title;
   $type  ||= 'ASC';
+  
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel sort_data() from
           $filename line $line\n~;
     return undef;
   }
+  
   foreach my $worksheet(@{$self->{worksheets}}){
     if($worksheet->[0] eq $title){
       $worksheet->[1]->{sortstring} = '' unless(exists $worksheet->[1]->{sortstring});
@@ -225,7 +307,7 @@ sub sort_data{
 sub reset_sort{
   my ($self,$title) = @_;
   my ($package,$filename,$line) = caller();
-  $title ||= 'unknown';
+  $title = $self->_last_sheet unless defined $title;
   unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
     $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
          $filename line $line\n~;
@@ -573,6 +655,19 @@ provide simple cell-formats, but only three types of formats (to keep the module
 
 =head1 METHODS
 
+Added in version 1.4:
+
+If you want a method to do the functionality for the last inserted worksheet
+(current sheet), you don't have to pass the title as a parameter for the method.
+
+So now you can do something like this:
+
+  $excel->add_worksheet("Test");
+  $excel->add_row(\@data);
+  $excel->sort_date($column_idx);
+
+This leads to more usability.
+
 =head2 new
 
   # create a new instance
@@ -715,6 +810,13 @@ format is set. Default format is set by Spreadsheet::WriteExcel
 
 sets the data formats for a specified worksheet. If formats are commited, the default
 format is set. Default format is set by Spreadsheet::WriteExcel
+
+=head2 current_sheet
+
+  $excel->add_worksheet('Testtitle');
+  print $excel->current_sheet;
+
+returns the title of the current worksheet.
 
 =head1 EXAMPLES
 
