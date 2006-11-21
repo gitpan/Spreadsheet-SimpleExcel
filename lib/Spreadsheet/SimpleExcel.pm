@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.4';
+our $VERSION     = '1.5';
 our $errstr      = '';
 
 sub new{
