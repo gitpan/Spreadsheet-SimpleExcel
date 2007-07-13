@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.6';
+our $VERSION     = '1.7';
 our $errstr      = '';
 
 sub new{
@@ -31,24 +31,24 @@ sub current_sheet{
 }
 
 sub add_worksheet{
-  my ($self,@array) = @_;
-  my ($package,$filename,$line) = caller();
-  unless(defined $array[0]){
-    $errstr = qq~No worksheet defined at Spreadsheet::SimpleExcel add_worksheet() from
-       $filename line $line\n~;
-    $array[0] = 'unknown' unless defined $array[0];
-    return undef;
-  }
+    my ($self,@array) = @_;
+    my ($package,$filename,$line) = caller();
+    unless(defined $array[0]){
+        $errstr = qq~No worksheet defined at Spreadsheet::SimpleExcel add_worksheet() from
+            $filename line $line\n~;
+        $array[0] = 'unknown' unless defined $array[0];
+        return undef;
+    }
   
-  $self->_last_sheet($array[0]);
+    $self->_last_sheet($array[0]);
   
-  if(grep{$_->[0] eq $array[0]}@{$self->{worksheets}}){
-    $errstr = qq~Duplicate worksheet-title at Spreadsheet::SimpleExcel add_worksheet() from
-       $filename line $line\n~;
-    return undef;
-  }
-  push(@{$self->{worksheets}},[@array]);
-  return 1;
+    if(grep{$_->[0] eq $array[0]}@{$self->{worksheets}}){
+        $errstr = qq~Duplicate worksheet-title at Spreadsheet::SimpleExcel add_worksheet() from
+            $filename line $line\n~;
+        return undef;
+    }
+    push(@{$self->{worksheets}},[@array]);
+    return 1;
 }# end add_worksheet
 
 sub _last_sheet{
@@ -60,289 +60,313 @@ sub _last_sheet{
 }
 
 sub del_worksheet{
-  my ($self,$title) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title) = @_;
+    my ($package,$filename,$line) = caller();
   
-  $title = $self->_last_sheet unless defined $title;
+    $title = $self->_last_sheet unless defined $title;
+    $self->_last_sheet( $title );
   
-  unless(defined $title){
-    $errstr = qq~No worksheet-title defined at Spreadsheet::SimpleExcel del_worksheet() from
-        $filename line $line\n~;
-    return undef;
-  }
-  my @worksheets = grep{$_->[0] ne $title}@{$self->{worksheets}};
-  $self->{worksheets} = [@worksheets];
+    unless(defined $title){
+        $errstr = qq~No worksheet-title defined at Spreadsheet::SimpleExcel del_worksheet() from
+            $filename line $line\n~;
+        return undef;
+    }
+    my @worksheets = grep{$_->[0] ne $title}@{$self->{worksheets}};
+    $self->{worksheets} = [@worksheets];
 }# end del_worksheet
 
 sub add_row{
-  my ($self,$title,$arref) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$arref) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(ref $title eq 'ARRAY'){
-      $arref = $title;
-      $title = $self->_last_sheet;
-  }
-  
-  $title = $self->_last_sheet unless $title;
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row() from
-         $filename line $line\n~;
-    return undef;
-  }
-  unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel add_row() from
-         $filename line $line\n~;
-    return undef;
-  }
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      push(@{$worksheet->[1]->{'-data'}},$arref);
-      last;
+    if(ref $title eq 'ARRAY'){
+        $arref = $title;
+        $title = $self->_last_sheet;
     }
-  }
-  return 1;
+  
+    $title = $self->_last_sheet unless $title;
+    $self->_last_sheet( $title );
+  
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row() from
+            $filename line $line\n~;
+        return undef;
+    }
+    unless(ref($arref) eq 'ARRAY'){
+        $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel add_row() from
+            $filename line $line\n~;
+        return undef;
+    }
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            push(@{$worksheet->[1]->{'-data'}},$arref);
+            last;
+        }
+    }
+    return 1;
 }# end add_data
 
 sub set_headers{
-  my ($self,$title,$arref) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$arref) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(ref $title eq 'ARRAY'){
-      $arref = $title;
-      $title = $self->_last_sheet;
-  }
-  
-  $title ||= 'unknown';
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers() from
-         $filename line $line\n~;
-    return undef;
-  }
-  unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers() from
-         $filename line $line\n~;
-    return undef;
-  }
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      $worksheet->[1]->{'-headers'} = $arref;
-      last;
+    if(ref $title eq 'ARRAY'){
+        $arref = $title;
+        $title = $self->_last_sheet;
     }
-  }
-  return 1;
+  
+    $title ||= $self->_last_sheet;
+    $self->_last_sheet( $title );
+    
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers() from
+            $filename line $line\n~;
+        return undef;
+    }
+    unless(ref($arref) eq 'ARRAY'){
+        $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers() from
+            $filename line $line\n~;
+        return undef;
+    }
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            $worksheet->[1]->{'-headers'} = $arref;
+            last;
+        }
+    }
+    return 1;
 }# end add_headers
 
 sub set_headers_format{
-  my ($self,$title,$arref) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$arref) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(ref $title eq 'ARRAY'){
-      $arref = $title;
-      $title = $self->_last_sheet;
-  }
-  
-  $title = $self->_last_sheet unless defined $title;
-  
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers_format() from
-         $filename line $line\n~;
-    return undef;
-  }
-  unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers_format() from
-         $filename line $line\n~;
-    return undef;
-  }
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      $worksheet->[1]->{'-headers_format'} = $arref;
-      last;
+    if(ref $title eq 'ARRAY'){
+        $arref = $title;
+        $title = $self->_last_sheet;
     }
-  }
-  return 1;
+  
+    $title = $self->_last_sheet unless defined $title;
+    $self->_last_sheet( $title );
+  
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_headers_format() from
+            $filename line $line\n~;
+        return undef;
+    }
+    unless(ref($arref) eq 'ARRAY'){
+        $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_headers_format() from
+            $filename line $line\n~;
+        return undef;
+    }
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            $worksheet->[1]->{'-headers_format'} = $arref;
+            last;
+        }
+    }
+    return 1;
 }# end add_headers
 
 sub set_data_format{
-  my ($self,$title,$arref) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$arref) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(ref $title eq 'ARRAY'){
-      $arref = $title;
-      $title = $self->_last_sheet;
-  }
-  
-  $title = $self->_last_sheet unless defined $title;
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_data_format() from
-         $filename line $line\n~;
-    return undef;
-  }
-  unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_data_format() from
-         $filename line $line\n~;
-    return undef;
-  }
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      $worksheet->[1]->{'-data_format'} = $arref;
-      last;
+    if(ref $title eq 'ARRAY'){
+        $arref = $title;
+        $title = $self->_last_sheet;
     }
-  }
-  return 1;
+  
+    $title = $self->_last_sheet unless defined $title;
+    $self->_last_sheet( $title );
+    
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel set_data_format() from
+            $filename line $line\n~;
+        return undef;
+    }
+    unless(ref($arref) eq 'ARRAY'){
+        $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel set_data_format() from
+            $filename line $line\n~;
+        return undef;
+    }
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            $worksheet->[1]->{'-data_format'} = $arref;
+            last;
+        }
+    }
+    return 1;
 }# end add_headers
 
 sub add_row_at{
-  my ($self,$title,$index,$arref) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$index,$arref) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(ref $index eq 'ARRAY'){
-      $arref = $index;
-      $index = $title;
-      $title = $self->_last_sheet;
-  }
-  
-  $title = $self->_last_sheet unless defined $title;
-  
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
-         $filename line $line\n~;
-    return undef;
-  }
-  unless(ref($arref) eq 'ARRAY'){
-    $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel add_row() from
-         $filename line $line\n~;
-    return undef;
-  }
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      my @array = @{$worksheet->[1]->{'-data'}};
-      if($index =~ /[^\d]/ || $index > $#array){
-        $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel add_row_at() from
-         $filename line $line\n~;
-        return undef;
-      }
-      splice(@array,$index,0,$arref);
-      $worksheet->[1]->{'-data'} = \@array;
-      last;
+    if(ref $index eq 'ARRAY'){
+        $arref = $index;
+        $index = $title;
+        $title = $self->_last_sheet;
     }
-  }
-  return 1;
+  
+    $title = $self->_last_sheet unless defined $title;
+    $self->_last_sheet( $title );
+  
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
+            $filename line $line\n~;
+        return undef;
+    }
+    unless(ref($arref) eq 'ARRAY'){
+        $errstr = qq~Is not an arrayref at Spreadsheet::SimpleExcel add_row() from
+            $filename line $line\n~;
+        return undef;
+    }
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            my @array = @{$worksheet->[1]->{'-data'}};
+            if($index =~ /[^\d]/ || $index > $#array){
+                $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel add_row_at() from
+                    $filename line $line\n~;
+                return undef;
+            }
+            splice(@array,$index,0,$arref);
+            $worksheet->[1]->{'-data'} = \@array;
+            last;
+        }
+    }
+    return 1;
 }# end add_row_at
 
 sub sort_data{
-  my ($self,$title,$index,$type) = @_;
-  my ($package,$filename,$line) = caller();
+    my ($self,$title,$index,$type) = @_;
+    my ($package,$filename,$line) = caller();
   
-  if(scalar @_ == 1){
-      $errstr = qq~at least column index is missing ($filename line $line)~;
-      return undef;
-  }
-  elsif(scalar @_ == 2){
-      if($title =~ /\D/){
-          $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
-            $filename line $line\n~;
-          return undef;
-          
-      }
-      else{
-          $index = $title;
-          $title = $self->_last_sheet;
-      }
-  }
-  elsif(scalar @_ == 3){
-      if($title =~ /^\d+$/ and $index =~ /^ASC|DESC$/){
-          $type  = $index;
-          $index = $title;
-          $title = $self->_last_sheet;
-      }
-  }
-  
-  $title = $self->_last_sheet unless defined $title;
-  $type  ||= 'ASC';
-  
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel sort_data() from
-          $filename line $line\n~;
-    return undef;
-  }
-  
-  foreach my $worksheet(@{$self->{worksheets}}){
-    if($worksheet->[0] eq $title){
-      $worksheet->[1]->{sortstring} = '' unless(exists $worksheet->[1]->{sortstring});
-      my $join = $worksheet->[1]->{sortstring} =~ /\w/ ? ' || ' : '';
-      my @array = @{$worksheet->[1]->{'-data'}};
-      last unless(scalar(@array) > 0);
-      if($index >= scalar(@{$array[0]})){
-        $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
-          $filename line $line\n~;
+    if(scalar @_ == 1){
+        $errstr = qq~at least column index is missing ($filename line $line)~;
         return undef;
-      }
-      if(not defined $index || $index =~ /\D/){
-        $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
-          $filename line $line\n~;
-        return undef;
-      }
-      if(_is_numeric(\@array,$index)){
-        if($type && $type eq 'DESC'){
-          $worksheet->[1]->{sortstring} .= "$join \$b->[$index] <=> \$a->[$index]";
-        }
-        else{
-          $worksheet->[1]->{sortstring} .= "$join \$a->[$index] <=> \$b->[$index]";
-        }
-      }
-      else{
-        if($type && $type eq 'DESC'){
-          $worksheet->[1]->{sortstring} .= "$join \$b->[$index] cmp \$a->[$index]";
-        }
-        else{
-          $worksheet->[1]->{sortstring} .= "$join \$a->[$index] cmp \$b->[$index]";
-        }
-      }
-      last;
     }
-  }
-  return 1;
+    elsif(scalar @_ == 2){
+        if($title =~ /\D/){
+            $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
+                $filename line $line\n~;
+            return undef;
+          
+        }
+        else{
+            $index = $title;
+            $title = $self->_last_sheet;
+        }
+    }
+    elsif(scalar @_ == 3){
+        if($title =~ /^\d+$/ and $index =~ /^ASC|DESC$/){
+            $type  = $index;
+            $index = $title;
+            $title = $self->_last_sheet;
+        }
+    }
+  
+    $title = $self->_last_sheet unless defined $title;
+    $type  ||= 'ASC';
+    
+    $self->_last_sheet( $title );
+  
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel sort_data() from
+            $filename line $line\n~;
+        return undef;
+    }
+  
+    foreach my $worksheet(@{$self->{worksheets}}){
+        if($worksheet->[0] eq $title){
+            $worksheet->[1]->{sortstring} = '' unless(exists $worksheet->[1]->{sortstring});
+            my $join = $worksheet->[1]->{sortstring} =~ /\w/ ? ' || ' : '';
+            my @array = @{$worksheet->[1]->{'-data'}};
+            last unless(scalar(@array) > 0);
+            if($index >= scalar(@{$array[0]})){
+                $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
+                    $filename line $line\n~;
+                return undef;
+            }
+            if(not defined $index || $index =~ /\D/){
+                $errstr = qq~Index not in Array at Spreadsheet::SimpleExcel sort_data() from
+                    $filename line $line\n~;
+                return undef;
+            }
+            if(_is_numeric(\@array,$index)){
+                if($type && $type eq 'DESC'){
+                    $worksheet->[1]->{sortstring} .= "$join \$b->[$index] <=> \$a->[$index]";
+                }
+                else{
+                    $worksheet->[1]->{sortstring} .= "$join \$a->[$index] <=> \$b->[$index]";
+                }
+            }
+            else{
+                if($type && $type eq 'DESC'){
+                    $worksheet->[1]->{sortstring} .= "$join \$b->[$index] cmp \$a->[$index]";
+                }
+                else{
+                    $worksheet->[1]->{sortstring} .= "$join \$a->[$index] cmp \$b->[$index]";
+                }
+            }
+            last;
+        }
+    }
+    return 1;
 }# end sort_data
 
 sub reset_sort{
-  my ($self,$title) = @_;
-  my ($package,$filename,$line) = caller();
-  $title = $self->_last_sheet unless defined $title;
-  unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
-    $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
-         $filename line $line\n~;
-    return undef;
-  }
-  my (@worksheets) = grep{$_->[0] eq $title}@{$self->{worksheets}};
-  for my $sheet(@worksheets){
-    $sheet->[1]->{sortstring} = '';
-  }
+    my ($self,$title) = @_;
+    my ($package,$filename,$line) = caller();
+    
+    $title = $self->_last_sheet unless defined $title;
+    $self->_last_sheet( $title );
+    
+    unless(grep{$_->[0] eq $title}@{$self->{worksheets}}){
+        $errstr = qq~Worksheet $title does not exist at Spreadsheet::SimpleExcel add_row_at() from
+            $filename line $line\n~;
+        return undef;
+    }
+    my (@worksheets) = grep{$_->[0] eq $title}@{$self->{worksheets}};
+    for my $sheet(@worksheets){
+        $sheet->[1]->{sortstring} = '';
+    }
 }# reset_sort
 
 sub errstr{
-  return $errstr;
+    return $errstr;
 }# end errstr
 
 sub sort_worksheets{
-  my ($self,$type) = @_;
-  $type ||= 'ASC';
-  my @title_array = map{$_->[0]}@{$self->{worksheets}};
-  if(_is_numeric(\@title_array)){
-    @{$self->{worksheets}} = sort{$a->[0] <=> $b->[0]}@{$self->{worksheets}};
-  }
-  else{
-    @{$self->{worksheets}} = sort{$a->[0] cmp $b->[0]}@{$self->{worksheets}};
-  }
-  @{$self->{worksheets}} = reverse(@{$self->{worksheets}}) if($type && $type eq 'DESC');
-  return @{$self->{worksheets}};
+    my ($self,$type) = @_;
+    $type ||= 'ASC';
+    
+    my @title_array = map{$_->[0]}@{$self->{worksheets}};
+    if( _is_title_numeric(\@title_array) ){
+        @{$self->{worksheets}} = sort{$a->[0] <=> $b->[0]}@{$self->{worksheets}};
+    }
+    else{
+        @{$self->{worksheets}} = sort{$a->[0] cmp $b->[0]}@{$self->{worksheets}};
+    }
+    @{$self->{worksheets}} = reverse(@{$self->{worksheets}}) if($type && $type eq 'DESC');
+    return @{$self->{worksheets}};
 }# end sort_worksheets
 
 sub _is_numeric{
-  my ($arref,$index) = @_;
-  foreach(@$arref){
-    return 0 if($_->[$index] =~ /[^\d\.]/);
-  }
-  return 1;
+    my ($arref,$index) = @_;
+    foreach(@$arref){
+        return 0 if($_->[$index] =~ /[^\d\.]/);
+    }
+    return 1;
+}# end _is_numeric
+
+
+sub _is_title_numeric{
+    my ($arref,$index) = @_;
+    foreach(@$arref){
+        return 0 if($_ =~ /[^\d\.]/);
+    }
+    return 1;
 }# end _is_numeric
 
 sub _do_sort{
@@ -574,9 +598,9 @@ sub _header2sheet{
 }# end _header2sheet
 
 sub sheets{
-  my ($self) = @_;
-  my @titles = map{$_->[0]}@{$self->{worksheets}};
-  return wantarray ? @titles : \@titles;
+    my ($self) = @_;
+    my @titles = map{$_->[0]}@{$self->{worksheets}};
+    return wantarray ? @titles : \@titles;
 }# end sheets
 
 1;
