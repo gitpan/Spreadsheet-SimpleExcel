@@ -80,3 +80,16 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
         
 1.5   Tue Nov 21 22:20:13 2006
         Test scripts improved
+
+1.6   Thu Jul 05 09:10:11 2007
+        Test scripts improved
+
+1.7   Fri Jul 13 12:11:10 2007
+        Bugfix in sort_worksheets
+        Set the "last_sheet" in several methods
+        rename tests
+        added t/02_synopsis.t
+
+1.8   Sun Jul 15 10:11:12 2007
+        Bugfix in t/97_manifest.t
+        check for length of worksheet name

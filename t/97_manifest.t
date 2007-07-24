@@ -1,7 +1,9 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 use Test::More;
 
-SKIP:{
-    eval "use Test::CheckManifest 1.0";
-    skip 'Test::CheckManifest 1.0 is required',1 if $@;
-    ok_manifest();
-}
+eval "use Test::CheckManifest 1.0";
+plan skip_all => "Test::CheckManifest 1.0 required" if $@;    
+ok_manifest();

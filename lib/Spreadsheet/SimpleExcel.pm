@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.7';
+our $VERSION     = '1.8';
 our $errstr      = '';
 
 sub new{
@@ -19,6 +19,13 @@ sub new{
   $self->{BIG}        = $opts{-big}        || 0;
   $self->{FILE}       = $opts{-filename}   || '';
   bless($self,$class);
+  
+  for my $sheet( @{ $self->{worksheets} } ){
+      if( length($sheet->[0]) > 0 ){
+          warn "length of worksheet name is greater than 31. It is truncated...";
+          $sheet->[0] = substr $sheet->[0], 0, 30;
+      }
+  }
   
   $self->_last_sheet('');
   
@@ -37,6 +44,11 @@ sub add_worksheet{
         $errstr = qq~No worksheet defined at Spreadsheet::SimpleExcel add_worksheet() from
             $filename line $line\n~;
         $array[0] = 'unknown' unless defined $array[0];
+        return undef;
+    }
+
+    if( length( $array[0] ) ){
+        $errstr = qq~Length of worksheet name has be at most 31~;
         return undef;
     }
   
@@ -76,12 +88,13 @@ sub del_worksheet{
 }# end del_worksheet
 
 sub add_row{
-    my ($self,$title,$arref) = @_;
+    my ($self,$title,$arref,$props) = @_;
     my ($package,$filename,$line) = caller();
   
     if(ref $title eq 'ARRAY'){
-        $arref = $title;
-        $title = $self->_last_sheet;
+        $props  = $arref;
+        $arref  = $title;
+        $title  = $self->_last_sheet;
     }
   
     $title = $self->_last_sheet unless $title;
@@ -107,12 +120,13 @@ sub add_row{
 }# end add_data
 
 sub set_headers{
-    my ($self,$title,$arref) = @_;
+    my ($self,$title,$arref,$props) = @_;
     my ($package,$filename,$line) = caller();
   
     if(ref $title eq 'ARRAY'){
-        $arref = $title;
-        $title = $self->_last_sheet;
+        $props  = $arref;
+        $arref  = $title;
+        $title  = $self->_last_sheet;
     }
   
     $title ||= $self->_last_sheet;
@@ -200,10 +214,11 @@ sub set_data_format{
 }# end add_headers
 
 sub add_row_at{
-    my ($self,$title,$index,$arref) = @_;
+    my ($self,$title,$index,$arref,$props) = @_;
     my ($package,$filename,$line) = caller();
   
     if(ref $index eq 'ARRAY'){
+        $props = $arref;
         $arref = $index;
         $index = $title;
         $title = $self->_last_sheet;
