@@ -93,3 +93,6 @@ Revision history for Perl extension Spreadsheet::SimpleExcel.
 1.8   Sun Jul 15 10:11:12 2007
         Bugfix in t/97_manifest.t
         check for length of worksheet name
+
+1.9   Wed Jul 25 11:10:14 2007
+        Bugfix in length checking

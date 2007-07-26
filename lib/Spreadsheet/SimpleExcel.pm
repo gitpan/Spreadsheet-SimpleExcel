@@ -8,7 +8,7 @@ use IO::Scalar;
 use IO::File;
 use XML::Writer;
 
-our $VERSION     = '1.8';
+our $VERSION     = '1.9';
 our $errstr      = '';
 
 sub new{
@@ -21,7 +21,7 @@ sub new{
   bless($self,$class);
   
   for my $sheet( @{ $self->{worksheets} } ){
-      if( length($sheet->[0]) > 0 ){
+      if( length($sheet->[0]) > 31 ){
           warn "length of worksheet name is greater than 31. It is truncated...";
           $sheet->[0] = substr $sheet->[0], 0, 30;
       }
@@ -47,7 +47,7 @@ sub add_worksheet{
         return undef;
     }
 
-    if( length( $array[0] ) ){
+    if( length( $array[0] ) > 31 ){
         $errstr = qq~Length of worksheet name has be at most 31~;
         return undef;
     }
